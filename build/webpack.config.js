@@ -25,6 +25,24 @@ module.exports = {
       filename: 'header.html',
       chunks: ['header'] //与入口对应的模块名
     }),
-    new CleanWebpackPlugin() // 打包前清空残留文件
-  ]
+    new CleanWebpackPlugin(), // 打包前清空残留文件
+    [require('postcss-preset-env')], // 引入postcss包处理
+  ],
+  module: { // 解析包
+    rules: [
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'] // 从右向左解析原则 css-style
+      },
+      {
+        test: /\.less$/,
+        use: ['style-loader', 'css-loader', {
+          loader: 'postcss-loader',
+          options: {
+            plugins:  [require('postcss-preset-env')]
+          }
+        }, 'less-loader']
+      }
+    ]
+  }
 }
