@@ -3,40 +3,42 @@
 const path = require('path'); // 地址
 const HtmlWebpackPlugin = require('html-webpack-plugin'); // html模板
 const postcssPresetEnv = require('postcss-preset-env'); // css预处理包
-// 拆分css打包 合并为一个css文件 多个css文件 extract-text-webpack-plugin
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-
 // 文件打包会残留上一次打包文件 打包前清空文件夹
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
+// 拆分css打包 合并为一个css文件 多个css文件 extract-text-webpack-plugin
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+// 解析vue文件
+const vueLoaderPlugin = require('vue-loader/lib/plugin');
+// webpack-dev-server 热跟新
+const Webpack = require('webpack');
+
 module.exports = {
-  mode: 'development', // 开发模式
-  entry: { // 入口文件 多入口文件
-    main: ['@babel/polyfill', path.resolve(__dirname, '../src/main.js')],
-    header: ['@babel/polyfill', path.resolve(__dirname, '../src/header.js')]
+  mode: 'development', // 模式选择 开发模式
+  entry: { // 入口文件 多入口文件 转换ES6等
+    main: [path.resolve(__dirname, '../src/main.js')],
+    // main: ['@babel/polyfill', path.resolve(__dirname, '../src/main.js')],
+    // header: ['@babel/polyfill', path.resolve(__dirname, '../src/header.js')]
   },
-  output: {
+  output: { // 出口文件
     filename: '[name].[hash:8].js', // 打包后文件名称 不用每次手动修改文件名
     path: path.resolve(__dirname, '../dist') // 打包后的目录
   },
-  plugins:[ // html模板 自动引入js
-    new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, '../public/index.html'),
+  plugins:[ // 插件
+    new HtmlWebpackPlugin({ // html模板 自动引入js
+      template: path.resolve(__dirname, '../src/public/index.html'),
       filename: 'index.html',
-      chunks: ['main'] // 与入口文件对应的模块名
-    }),
-    new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, '../public/header.html'),
-      filename: 'header.html',
-      chunks: ['header'] //与入口对应的模块名
+      // chunks: ['main'] // 与入口文件对应的模块名
     }),
     new CleanWebpackPlugin(), // 打包前清空残留文件
     new MiniCssExtractPlugin({ // 拆分css打包 合并为一个css文件
       filename: '[name].[hash].css',
       chunkFilename: '[id].css',
       ignoreOrder: false,
-    })
+    }),
+    new vueLoaderPlugin(), // vue-loader 解析
+    new Webpack.HotModuleReplacementPlugin(), // webpack热跟新
   ],
-  module: { // 解析包
+  module: { // 解析包 loader 模块
     rules: [ // 从右向左解析原则 css-style
       {
         test: /\.js$/,
@@ -44,16 +46,19 @@ module.exports = {
           // 将ES6/ES7转换为ES5语法，新API不会被转换(promise\Generator\Set等) 需借助@babel/polyfill转换
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-env']
+            presets: [
+              ['@babel/preset-env']
+            ]
           }
         },
-        exclude: /node_modules/
+        // exclude: /node_modules/
       },
       {
         test: /\.css$/,
         use: [
           MiniCssExtractPlugin.loader,
-          'style-loader',
+          // 'style-loader', 使用MiniCssExtractPlugin压缩css,将css合并到一个css文件中，输入到指定目录 不能与style-loader一起写
+          'vue-style-loader',
           {
             loader: 'css-loader',
             options: {
@@ -75,7 +80,9 @@ module.exports = {
         test: /\.less$/,
         use: [
           MiniCssExtractPlugin.loader,
-          'style-loader', 'css-loader',
+          // 'style-loader',
+          'vue-style-loader',
+          'css-loader',
           {
             loader: 'postcss-loader',
             options: {
@@ -138,6 +145,22 @@ module.exports = {
           }
         ]
       },
+      {
+        test: /\.vue$/,
+        use: ['vue-loader']
+      },
     ]
-  }
+  },
+  resolve: { // 路径目录
+    alias: { // 别名 创建 import 或 require 的别名
+      'vue$': 'vue/dist/vue.runtime.esm.js',
+      '@': path.resolve(__dirname, '../src')
+    },
+    extensions: ['*', '.js', '.json', '.vue'] // 扩展名
+  },
+  devServer: { // webpack热跟新配置
+    port: 8080,
+    hot: true,
+    contentBase: '../dist'
+  },
 }
