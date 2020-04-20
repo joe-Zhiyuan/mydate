@@ -10,7 +10,9 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 // 解析vue文件
 const vueLoaderPlugin = require('vue-loader/lib/plugin');
 // webpack-dev-server 热跟新
-const Webpack = require('webpack');
+// const Webpack = require('webpack');
+// 区分开发环境与生产环境
+const devMode = process.argv.indexOf('--mode=production') === -1;
 
 module.exports = {
   mode: 'development', // 模式选择 开发模式
@@ -21,7 +23,8 @@ module.exports = {
   },
   output: { // 出口文件
     filename: '[name].[hash:8].js', // 打包后文件名称 不用每次手动修改文件名
-    path: path.resolve(__dirname, '../dist') // 打包后的目录
+    path: path.resolve(__dirname, '../dist'), // 打包后的目录
+    chunkFilename: 'js/[name].[hash:8].js'
   },
   plugins:[ // 插件
     new HtmlWebpackPlugin({ // html模板 自动引入js
@@ -30,13 +33,18 @@ module.exports = {
       // chunks: ['main'] // 与入口文件对应的模块名
     }),
     new CleanWebpackPlugin(), // 打包前清空残留文件
+    // new MiniCssExtractPlugin({ // 拆分css打包 合并为一个css文件
+    //   filename: '[name].[hash].css',
+    //   chunkFilename: '[id].css',
+    //   ignoreOrder: false,
+    // }),
     new MiniCssExtractPlugin({ // 拆分css打包 合并为一个css文件
-      filename: '[name].[hash].css',
-      chunkFilename: '[id].css',
+      filename: devMode ? '[name].css' : '[name].[hash].css',
+      chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
       ignoreOrder: false,
     }),
     new vueLoaderPlugin(), // vue-loader 解析
-    new Webpack.HotModuleReplacementPlugin(), // webpack热跟新
+    // new Webpack.HotModuleReplacementPlugin(), // webpack热跟新
   ],
   module: { // 解析包 loader 模块
     rules: [ // 从右向左解析原则 css-style
@@ -51,16 +59,22 @@ module.exports = {
             ]
           }
         },
-        // exclude: /node_modules/
+        exclude: /node_modules/
       },
       {
         test: /\.css$/,
         use: [
-          MiniCssExtractPlugin.loader,
-          // 'style-loader', 使用MiniCssExtractPlugin压缩css,将css合并到一个css文件中，输入到指定目录 不能与style-loader一起写
-          'vue-style-loader',
+          // MiniCssExtractPlugin.loader, // 使用MiniCssExtractPlugin压缩css,将css合并到一个css文件中，输入到指定目录 不能与style-loader一起写
+          // 'style-loader', // style-loader将css-loader处理的样式注入到HTML
           {
-            loader: 'css-loader',
+            loader: devMode ? 'vue-style-loader' : MiniCssExtractPlugin.loader,
+            options: {
+              publicPath: "../dist/css/",
+              hmr: devMode
+            }
+          }, // 与style-loader一致
+          {
+            loader: 'css-loader', // css-loader加载css文件
             options: {
               importLoaders: 1
             }
@@ -73,15 +87,21 @@ module.exports = {
                 postcssPresetEnv()
               ]
             }
-          }
+          }, 'less-loader' // 将less处理为css文件
         ] 
       },
       {
         test: /\.less$/,
         use: [
-          MiniCssExtractPlugin.loader,
+          // MiniCssExtractPlugin.loader,
           // 'style-loader',
-          'vue-style-loader',
+          {
+            loader: devMode ? 'vue-style-loader' : MiniCssExtractPlugin.loader,
+            options: {
+              publicPath: "../dist/css/",
+              hmr: devMode
+            }
+          },
           'css-loader',
           {
             loader: 'postcss-loader',
@@ -147,7 +167,14 @@ module.exports = {
       },
       {
         test: /\.vue$/,
-        use: ['vue-loader']
+        use: [{
+          loader: 'vue-loader',
+          options: {
+            compilerOptions: {
+              preserveWhitespace: false
+            }
+          }
+        }]
       },
     ]
   },
@@ -158,9 +185,9 @@ module.exports = {
     },
     extensions: ['*', '.js', '.json', '.vue'] // 扩展名
   },
-  devServer: { // webpack热跟新配置
-    port: 8080,
-    hot: true,
-    contentBase: '../dist'
-  },
+  // devServer: { // webpack热跟新配置
+  //   port: 8080,
+  //   hot: true,
+  //   contentBase: '../dist'
+  // },
 }

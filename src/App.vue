@@ -16,13 +16,15 @@ export default {
 </script>
 
 <style scoped>
-  /* #container {
+  @import url('assets/index.less');
+  
+  #container {
     color: rebeccapurple;
     display: flex;
   }
   .img {
     width: 128px;
     height: 128px;
-    background-image: url("../assets/shizukaRin.jpg");
-  } */
+    background-image: url("assets/shizukaRin.jpg");
+  }
 </style>
