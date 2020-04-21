@@ -1,7 +1,8 @@
 <template>
   <div id="container">
-    <h1>{{initData}}</h1>
+    <h1 :title='title'>{{message}}</h1>
     <div class="img"></div>
+    <button @click="reverseMessage">点击逆转</button>
   </div>
 </template>
 
@@ -9,7 +10,13 @@
 export default {
   data () {
     return {
-      initData: 'webpack配置vue开发环境'
+      message: 'webpack配置vue开发环境',
+      title: '配置标题'
+    }
+  },
+  methods: {
+    reverseMessage : function () {
+      this.message = this.message.split('').reverse().join('');
     }
   }
 }
