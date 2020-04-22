@@ -15,6 +15,7 @@ const vueLoaderPlugin = require('vue-loader/lib/plugin');
 const devMode = process.argv.indexOf('--mode=production') === -1;
 
 module.exports = {
+  // 优化打包速度 配置mode参数与devtool参数 production模式下会去除tree shaking无用代码并uglifyjs代码压缩混淆
   mode: 'development', // 模式选择 开发模式
   entry: { // 入口文件 多入口文件 转换ES6等
     main: [path.resolve(__dirname, '../src/main.js')],
@@ -47,6 +48,7 @@ module.exports = {
     // new Webpack.HotModuleReplacementPlugin(), // webpack热跟新
   ],
   module: { // 解析包 loader 模块
+    noParse: /jquery/, // 不去解析jquery中的依赖库 是否有依赖的包 jQuery不会引入其他包，加快打包速度
     rules: [ // 从右向左解析原则 css-style
       {
         test: /\.js$/,
@@ -169,6 +171,8 @@ module.exports = {
         test: /\.vue$/,
         use: [{
           loader: 'vue-loader',
+          include: [path.resolve(__dirname, 'src')], // 减少webpack loader搜索时间
+          exclude: /node_modules/,
           options: {
             compilerOptions: {
               preserveWhitespace: false
@@ -180,10 +184,13 @@ module.exports = {
   },
   resolve: { // 路径目录
     alias: { // 别名 创建 import 或 require 的别名
+      // 当出现import 'vue'时 告诉webpack去哪个路径下面找，减少搜索范围
       'vue$': 'vue/dist/vue.runtime.esm.js',
-      '@': path.resolve(__dirname, '../src')
+      '@': path.resolve(__dirname, '../src'),
+      'assets': path.resolve(__dirname, '../src/assets'),
+      'components': path.resolve(__dirname, '../src/components')
     },
-    extensions: ['*', '.js', '.json', '.vue'] // 扩展名
+    extensions: ['*', '.js', '.json', '.vue'] // 扩展名 定义后缀查找文件，频率高的优先写在前面
   },
   // devServer: { // webpack热跟新配置
   //   port: 8080,
