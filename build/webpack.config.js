@@ -7,6 +7,11 @@ const postcssPresetEnv = require('postcss-preset-env'); // css预处理包
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 // 拆分css打包 合并为一个css文件 多个css文件 extract-text-webpack-plugin
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+// HappyPack开启多线程loader转换 对js/css/图片等进行转换 
+// 数据量大 分解到子线程并行处理，处理完发送主线程 减少总的构建时间
+const HappyPack = require('happypack');
+const os = require('os');
+const happyThreadPool = HappyPack.ThreadPool({ size: os.cpus().length })
 // 解析vue文件
 const vueLoaderPlugin = require('vue-loader/lib/plugin');
 // webpack-dev-server 热跟新
@@ -46,6 +51,22 @@ module.exports = {
     }),
     new vueLoaderPlugin(), // vue-loader 解析
     // new Webpack.HotModuleReplacementPlugin(), // webpack热跟新
+    new HappyPack({
+      id: 'happyBabel', // 与loader对应的id标识
+      // 用法与loader配置一样 这里时loaders
+      loaders: [
+        {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              ['@babel/preset-env']
+            ],
+            cacheDirectory: true
+          }
+        }
+      ],
+      threadPool: happyThreadPool // 共享进程池
+    })
   ],
   module: { // 解析包 loader 模块
     noParse: /jquery/, // 不去解析jquery中的依赖库 是否有依赖的包 jQuery不会引入其他包，加快打包速度
@@ -54,12 +75,15 @@ module.exports = {
         test: /\.js$/,
         use: {
           // 将ES6/ES7转换为ES5语法，新API不会被转换(promise\Generator\Set等) 需借助@babel/polyfill转换
-          loader: 'babel-loader',
-          options: {
-            presets: [
-              ['@babel/preset-env']
-            ]
-          }
+          // loader: 'babel-loader',
+          loader: 'happypack/loader?id=happyBabel',
+          // happypack出现错误 去除options
+          // HappyPack: plugin for the loader '1' could not be found! Did you forget to a
+          // options: {
+          //   presets: [
+          //     ['@babel/preset-env']
+          //   ]
+          // }
         },
         exclude: /node_modules/
       },
@@ -117,7 +141,7 @@ module.exports = {
         ]
       },
       {
-        test: /\.(jpg?g|png|gif)$/i, // 图片文件
+        test: /\.(jpg|jepg|png|gif)$/i, // 图片文件
         use: [
           {
             loader: 'url-loader', // 限制文件大小 返回base64编码，否则用file-loader将文件移入输出目录
@@ -171,14 +195,17 @@ module.exports = {
         test: /\.vue$/,
         use: [{
           loader: 'vue-loader',
-          include: [path.resolve(__dirname, 'src')], // 减少webpack loader搜索时间
-          exclude: /node_modules/,
           options: {
             compilerOptions: {
               preserveWhitespace: false
             }
           }
-        }]
+        }],
+        // 放在这里 防止出错 include表示哪些文件需要vue-loader
+        // 减少webpack loader搜索时间
+        include: /src/,
+        // 表示哪些文件不需要vue-loader
+        exclude: /node_modules/
       },
     ]
   },
@@ -187,8 +214,8 @@ module.exports = {
       // 当出现import 'vue'时 告诉webpack去哪个路径下面找，减少搜索范围
       'vue$': 'vue/dist/vue.runtime.esm.js',
       '@': path.resolve(__dirname, '../src'),
-      'assets': path.resolve(__dirname, '../src/assets'),
-      'components': path.resolve(__dirname, '../src/components')
+      'assets': path.resolve(__dirname,'src/assets'),
+      'components': path.resolve(__dirname,'src/components')
     },
     extensions: ['*', '.js', '.json', '.vue'] // 扩展名 定义后缀查找文件，频率高的优先写在前面
   },

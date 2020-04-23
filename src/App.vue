@@ -2,6 +2,7 @@
   <div id="container">
     <h1 :title='title'>{{message}}</h1>
     <div class="img"></div>
+    <div>{{bodyContent}}</div>
     <button @click="reverseMessage">点击逆转</button>
   </div>
 </template>
@@ -11,12 +12,14 @@ export default {
   data () {
     return {
       message: 'webpack配置vue开发环境',
-      title: '配置标题'
+      title: '配置标题',
+      bodyContent: '内容文本'
     }
   },
   methods: {
     reverseMessage : function () {
       this.message = this.message.split('').reverse().join('');
+      console.log(-1);
     }
   }
 }

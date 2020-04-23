@@ -4,8 +4,8 @@
   "description": "a date",
   "main": "index.js",
   "scripts": {
-    "dev": "webpack-dev-server --config build/webpack.config.js",
-    "build": "webpack --config build/webpack.config.js"
+    "dev": "webpack-dev-server --config build/webpack.dev.js",
+    "build": "webpack --config build/webpack.prod.js"
   },
   "repository": {
     "type": "git",
