@@ -11,13 +11,17 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 // 数据量大 分解到子线程并行处理，处理完发送主线程 减少总的构建时间
 const HappyPack = require('happypack');
 const os = require('os');
-const happyThreadPool = HappyPack.ThreadPool({ size: os.cpus().length })
+const happyThreadPool = HappyPack.ThreadPool({ size: os.cpus().length });
+// 优化代码压缩时间
+const ParallelUglifyPlugin = require('webpack-parallel-uglify-plugin');
 // 解析vue文件
 const vueLoaderPlugin = require('vue-loader/lib/plugin');
 // webpack-dev-server 热跟新
 // const Webpack = require('webpack');
 // 区分开发环境与生产环境
 const devMode = process.argv.indexOf('--mode=production') === -1;
+// 将打包后内容树展示为直观树状图 知道真正引入的内容  npm run dev 自动打开
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = {
   // 优化打包速度 配置mode参数与devtool参数 production模式下会去除tree shaking无用代码并uglifyjs代码压缩混淆
@@ -66,11 +70,36 @@ module.exports = {
         }
       ],
       threadPool: happyThreadPool // 共享进程池
-    })
+    }),
+    new ParallelUglifyPlugin({ // 优化代码压缩时间
+      cacheDir: '.cache/',
+      uglifyJS: {
+        output: {
+          comments: false,
+          beautify: false
+        },
+        compress: {
+          // drop_console: true,
+          collapse_vars: true,
+          reduce_vars: true
+        }
+      }
+    }),
+    new BundleAnalyzerPlugin({
+      analyzerHost: '127.0.0.1',
+      analyzerPort: 8081
+    }),
   ],
   module: { // 解析包 loader 模块
     noParse: /jquery/, // 不去解析jquery中的依赖库 是否有依赖的包 jQuery不会引入其他包，加快打包速度
     rules: [ // 从右向左解析原则 css-style
+      {
+        test: /\.ext$/,
+        use: [
+          'cache-loader',
+        ],
+        include: path.resolve(__dirname, 'src')
+      },
       {
         test: /\.js$/,
         use: {
