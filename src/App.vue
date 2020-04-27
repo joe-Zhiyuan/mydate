@@ -2,7 +2,7 @@
   <div id="container">
     <h1 :title='title'>{{message}}</h1>
     <div class="img"></div>
-    <div>{{bodyContent}}</div>
+    <div class="contentTxt">{{bodyContent}}</div>
     <button @click="reverseMessage">点击逆转</button>
   </div>
 </template>
@@ -21,7 +21,10 @@ export default {
       this.message = this.message.split('').reverse().join('');
       console.log(-1);
     }
-  }
+  },
+  mounted: function () {
+    $('.contentTxt').css("color", "green");
+  },
 }
 </script>
 

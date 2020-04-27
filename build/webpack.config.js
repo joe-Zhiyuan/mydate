@@ -22,6 +22,8 @@ const vueLoaderPlugin = require('vue-loader/lib/plugin');
 const devMode = process.argv.indexOf('--mode=production') === -1;
 // 将打包后内容树展示为直观树状图 知道真正引入的内容  npm run dev 自动打开
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+// CDN 使用 jquery 全局直接引入 使用
+const $ = require('jquery');
 
 module.exports = {
   // 优化打包速度 配置mode参数与devtool参数 production模式下会去除tree shaking无用代码并uglifyjs代码压缩混淆
@@ -63,11 +65,13 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: [
-              ['@babel/preset-env']
+              // 解决tree-shaking生效必须为ES6模块问题
+              // 不能为commonJS 使用Babel默认转译为commonJS类型 导致tree-shaking 所以设置modules: false
+              ['@babel/preset-env', {modules: false}]
             ],
             cacheDirectory: true
           }
-        }
+        },
       ],
       threadPool: happyThreadPool // 共享进程池
     }),
@@ -253,4 +257,8 @@ module.exports = {
   //   hot: true,
   //   contentBase: '../dist'
   // },
+  // 通过CDN方式引jQuery 使用时依旧require方式 不希望webpack编译 配置Externals
+  externals: {
+    jquery: 'jQuery'
+  }
 }
