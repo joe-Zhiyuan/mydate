@@ -23,9 +23,9 @@ const devMode = process.argv.indexOf('--mode=production') === -1;
 // 将打包后内容树展示为直观树状图 知道真正引入的内容  npm run dev 自动打开
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 // CDN 使用 jquery 全局直接引入 使用
-const $ = require('jquery');
-// 自定义插件 打包文件大小输出 filesize.md\
-// const firstPlugin = require('webpack-firstPlugin.js');
+// const $ = require('jquery');
+// 自定义插件 打包文件大小输出 127.0.0.1:8080/filesize.md访问 文件放到node_modules中
+const firstPlugin = require('webpack-firstPlugin.js');
 
 module.exports = {
   // 优化打包速度 配置mode参数与devtool参数 production模式下会去除tree shaking无用代码并uglifyjs代码压缩混淆
@@ -96,7 +96,7 @@ module.exports = {
       analyzerPort: 8081
     }),
     // 自定义打包插件
-    // new firstPlugin(),
+    new firstPlugin(),
   ],
   module: { // 解析包 loader 模块
     noParse: /jquery/, // 不去解析jquery中的依赖库 是否有依赖的包 jQuery不会引入其他包，加快打包速度
@@ -237,9 +237,9 @@ module.exports = {
               preserveWhitespace: false
             }
           }
-        },{
-          loader: path.resolve('src/js/drop-console.js'),
-          option: {}
+        // },{
+        //   loader: path.resolve('src/js/drop-console.js'),
+        //   option: {}
         }],
         // 放在这里 防止出错 include表示哪些文件需要vue-loader
         // 减少webpack loader搜索时间
