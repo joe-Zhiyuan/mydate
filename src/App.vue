@@ -8,6 +8,7 @@
 </template>
 
 <script>
+// 引入jQuery
 import $ from 'jquery';
 
 export default {
